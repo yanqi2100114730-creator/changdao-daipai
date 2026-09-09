@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ff6f3c">
+  <title>长岛团队代拍记录</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.ico">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 顶部栏 -->
+  <header class="app-header">
+    <div class="h-left">
+      <h1>长岛团队代拍记录</h1>
+    </div>
+    <div class="h-actions">
+      <button id="btnFilterToggle" class="icon-btn" title="筛选" aria-label="筛选">&#9776; 筛选</button>
+      <button id="btnAdd" class="btn primary">＋ 新增</button>
+      <button id="btnOcr" class="btn">截图识别</button>
+      <button id="btnSync" class="btn">同步</button>
+      <button id="btnExport" class="btn">导出</button>
+      <button id="btnImport" class="btn">导入</button>
+    </div>
+  </header>
+
+  <!-- 统计卡片 -->
+  <section id="stats" class="stats"></section>
+
+  <!-- 视图标签 + 结果信息 -->
+  <div class="subbar">
+    <div id="views" class="views"></div>
+    <div id="resultInfo" class="result-info"></div>
+  </div>
+
+  <!-- 筛选侧边栏（桌面可收起，手机抽屉） -->
+  <div id="filterBackdrop" class="filter-backdrop"></div>
+  <aside id="filterSidebar" class="filter-sidebar">
+    <div class="fs-head">
+      <h2>代拍筛选</h2>
+      <div class="fs-head-actions">
+        <button id="btnFsCollapse" class="icon-btn" title="展开/收起">&#9644;</button>
+        <button id="btnFsClose" class="icon-btn" title="关闭">✕</button>
+      </div>
+    </div>
+    <div class="fs-body">
+      <label class="fld-label">关键词搜索</label>
+      <input id="q" type="search" class="fld" placeholder="订单号/商品/委托人/买家/备注">
+
+      <label class="fld-label">商品名称</label>
+      <input id="fProduct" type="text" class="fld" placeholder="输入商品名模糊匹配">
+
+      <label class="fld-label">代拍平台</label>
+      <select id="fPlatform" class="fld"></select>
+
+      <label class="fld-label">委托人</label>
+      <select id="fClient" class="fld"></select>
+
+      <label class="fld-label">佣金结算状态</label>
+      <select id="fSettle" class="fld">
+        <option value="">全部</option>
+        <option value="待结算">待结算</option>
+        <option value="已结算">已结算</option>
+      </select>
+
+      <label class="fld-label">代拍时间</label>
+      <input id="fDate" type="date" class="fld">
+
+      <button id="btnReset" class="btn block">重置筛选</button>
+    </div>
+  </aside>
+
+  <!-- 主内容：由 JS 渲染（桌面表格 + 手机卡片） -->
+  <div class="layout">
+    <main id="content" class="content"></main>
+  </div>
+
+  <!-- ============ 新增/编辑 弹窗 ============ -->
+  <div id="mask" class="modal-mask">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="modalTitle">新增代拍记录</h2>
+        <button id="btnClose" class="icon-btn" aria-label="关闭">✕</button>
+      </div>
+      <form id="orderForm" class="modal-body" autocomplete="off">
+        <div class="grid-2">
+          <div class="fld-group">
+            <label>代拍平台 *</label>
+            <input id="iPlatform" list="platformList" placeholder="如：京东 / 闲鱼">
+          </div>
+          <div class="fld-group">
+            <label>下单日期</label>
+            <input id="iOrderTime" type="date">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="fld-group">
+            <label>订单编号 *</label>
+            <input id="iOrderNo" placeholder="订单号（不可重复）">
+          </div>
+          <div class="fld-group">
+            <label>商品名称 *</label>
+            <input id="iProduct" placeholder="买了什么">
+          </div>
+        </div>
+
+        <div class="fld-group">
+          <label>结算方式 / 实付金额（自由填写）</label>
+          <input id="iPayInfo" class="fld" placeholder="例：京东白条支付，实付 ¥599">
+          <span class="hint">把结算平台和实付金额写在一起即可，如「微信支付，实付318」「代付，实付0」</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="fld-group">
+            <label>委托人（帮谁代拍） *</label>
+            <input id="iClient" list="clientList" placeholder="如：小王 / 李姐">
+          </div>
+          <div class="fld-group">
+            <label>佣金结算状态</label>
+            <select id="iSettle" class="fld">
+              <option value="待结算">待结算</option>
+              <option value="已结算">已结算</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="fld-group">
+            <label>佣金金额（元）</label>
+            <input id="iCommission" type="number" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="fld-group">
+            <label>自己所得佣金（元）</label>
+            <input id="iSelfCommission" type="number" step="0.01" min="0" placeholder="留空=与佣金相同">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="fld-group">
+            <label>买家信息</label>
+            <input id="iBuyer" placeholder="收货人 / 昵称">
+          </div>
+          <div class="fld-group">
+            <label>备注</label>
+            <input id="iRemark" placeholder="选填">
+          </div>
+        </div>
+
+        <datalist id="platformList"></datalist>
+        <datalist id="clientList"></datalist>
+
+        <!-- 凭证图片 -->
+        <div class="fld-group">
+          <label>凭证图片（最多 3 张）</label>
+          <div id="imgGrid" class="img-grid"></div>
+          <div class="img-actions">
+            <button type="button" id="btnAddImage" class="btn sm">从相册选择</button>
+            <button type="button" id="btnAddPhoto" class="btn sm">拍照添加</button>
+            <span id="imgHint" class="hint"></span>
+          </div>
+        </div>
+
+        <!-- OCR 截图识别 -->
+        <div class="ocr-box">
+          <div class="ocr-title">截图识别（可选）</div>
+          <div class="ocr-actions">
+            <button type="button" id="btnPickImage" class="btn sm">选择截图</button>
+            <button type="button" id="btnTakePhoto" class="btn sm">拍照识别</button>
+          </div>
+          <div id="ocrResult" class="ocr-result">
+            <img id="ocrPreview" class="ocr-preview" alt="截图预览">
+            <div id="ocrStatus" class="ocr-status">未选择图片</div>
+            <div id="ocrProgress" class="ocr-progress"><div class="bar"></div></div>
+            <div id="ocrWarn" class="ocr-warn"></div>
+            <div id="ocrOk" class="ocr-ok"></div>
+            <div class="ocr-fields">
+              <div class="grid-2">
+                <div><label>平台</label><input id="ocrPlatform"></div>
+                <div><label>订单号</label><input id="ocrOrderNo"></div>
+              </div>
+              <div class="grid-2">
+                <div><label>实付金额</label><input id="ocrPaid"></div>
+                <div><label>买家</label><input id="ocrBuyer"></div>
+              </div>
+            </div>
+            <div class="ocr-actions">
+              <button type="button" id="btnOcrRun" class="btn sm primary">开始识别</button>
+              <button type="button" id="btnOcrApply" class="btn sm">填入表单</button>
+              <button type="button" id="btnOcrToggleRaw" class="btn sm">查看识别原文</button>
+            </div>
+            <textarea id="ocrRaw" class="ocr-raw" readonly placeholder="识别原文"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button type="button" id="btnCancel" class="btn">取消</button>
+          <button type="submit" id="btnSave" class="btn primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ 隐藏文件输入（视觉隐藏，移动端可正常点击） ============ -->
+  <input id="imageInput" type="file" accept="image/*" class="vis-hidden">
+  <input id="galleryInput" type="file" accept="image/*" multiple class="vis-hidden">
+  <input id="fileCsv" type="file" accept=".csv,text/csv" class="vis-hidden">
+  <input id="fileJson" type="file" accept=".json,application/json" class="vis-hidden">
+
+  <!-- ============ 同步弹窗 ============ -->
+  <div id="syncMask" class="modal-mask">
+    <div class="modal sync-modal">
+      <div class="modal-head">
+        <h2>多设备同步</h2>
+        <button id="btnSyncClose" class="icon-btn" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="tip">手机 ↔ 手机 / 电脑，推荐用「复制数据 → 粘贴导入」，不用传文件，图片也能一起带走。</p>
+        <button id="btnCopyData" class="btn block primary">复制数据（含图片）</button>
+        <div id="copyDataHint" class="sync-url-hint"></div>
+        <label class="fld-label">粘贴同步数据 / JSON 导入</label>
+        <textarea id="syncPaste" class="fld sync-paste" placeholder="把另一台设备上「复制数据」得到的文本粘贴到这里，再点下面的导入按钮"></textarea>
+        <button id="btnPasteImport" class="btn block">导入粘贴的数据</button>
+
+        <hr class="sep">
+        <p class="tip">以下为电脑端可选方式：</p>
+        <button id="btnGenSync" class="btn block">生成同步链接</button>
+        <input id="syncUrl" class="sync-url fld" readonly>
+        <div class="sync-qr-row"><div id="qrWrap"></div></div>
+        <button id="btnCopySync" class="btn block">复制链接</button>
+        <hr class="sep">
+        <div class="sync-row">
+          <button id="btnBackup" class="btn">导出备份(JSON)</button>
+          <button id="btnRestore" class="btn">导入备份(JSON)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 大图查看 ============ -->
+  <div id="lightbox" class="lightbox">
+    <button id="btnCloseLb" class="lb-close" aria-label="关闭">✕</button>
+    <img id="lightboxImg" alt="凭证大图">
+  </div>
+
+  <!-- 轻提示 -->
+  <div id="toast" class="toast"></div>
+
+  <script src="ocr.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
